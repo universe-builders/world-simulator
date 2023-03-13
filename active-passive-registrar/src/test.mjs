@@ -1,7 +1,7 @@
 import expect from "./expect.mjs";
 import k8s from "@kubernetes/client-node";
 
-console.log("test");
+console.log("testing");
 
 let kc = null;
 try
