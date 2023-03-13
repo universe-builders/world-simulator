@@ -1,1 +1,0 @@
-docker push universebuilders/world-simulator-service-registrar:latest
