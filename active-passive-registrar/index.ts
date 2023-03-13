@@ -43,15 +43,13 @@ async function main()
     {
         if(lease.spec == undefined) process.exit(1);
 
-        lease.spec.holderIdentity = "lalala";
+        lease.spec.holderIdentity = "ahshashdahs";
 
         const response = await k8sAPI.replaceNamespacedLease("distribute-zone-simulation-active", "default", lease, undefined, undefined, undefined, undefined, undefined);
         
         expect(response.response.statusCode, "Status Code").isGTorEQ(200).isLTorEQ(299);
         
         console.log(response.response.statusCode)
-       
-       
     }
     catch(error)
     {
