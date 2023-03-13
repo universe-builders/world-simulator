@@ -1,4 +1,6 @@
 # to do
+* only try to grab if time is out
+* poll lease at a frequency or use watch
 * get lease for first time
 * continually refresh lease and grab if expired
 * spawn 3 and kill them in random orders to ensure it works as expected
