@@ -1,5 +1,5 @@
-import expect from "./expect.mjs";
 import k8s from "@kubernetes/client-node";
+import expect from "./expect.js";
 
 async function main()
 {
@@ -29,7 +29,7 @@ async function main()
     let lease = null;
     try{
         const response = await k8sAPI.readNamespacedLease("distribute-zone-simulation-active", "default");
-        expect(response.response.statusCode).isGTorEQ(200).isLTorEQ(299);
+        expect(response.response.statusCode, "Status Code").isGTorEQ(200).isLTorEQ(299);
 
         lease = response.body;
     }
@@ -41,15 +41,15 @@ async function main()
     // Attempt to update current lease to become active.
     try
     {
-        lease.spec.holderIdentity = "lalala";
+        if(lease.spec == undefined) process.exit(1);
+
+        lease.spec.holderIdentity = "ahshashdahs";
 
         const response = await k8sAPI.replaceNamespacedLease("distribute-zone-simulation-active", "default", lease, undefined, undefined, undefined, undefined, undefined);
         
         expect(response.response.statusCode, "Status Code").isGTorEQ(200).isLTorEQ(299);
         
         console.log(response.response.statusCode)
-       
-       
     }
     catch(error)
     {

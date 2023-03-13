@@ -1,13 +1,13 @@
-const expect = (variable, variableName)=>
+const expect = (variable: any, variableName: string): any=>
 {
     if(variable === undefined)
     {
         throw new Error(`Expected ${variableName} to be defined.`)
     }
 
-    const expectations = {variable, variableName};
+    const expectations: any = {variable, variableName};
 
-    const isType = (expectations, type)=>
+    const isType = (expectations: any, type: string)=>
     {
         if(typeof(expectations.variable) !== type)
         {
@@ -18,7 +18,7 @@ const expect = (variable, variableName)=>
     }
     expectations.isType = isType.bind(null, expectations);
 
-    const isNotNull = (expectations)=>
+    const isNotNull = (expectations: any)=>
     {
         if(expectations.variable === null)
         {
@@ -29,7 +29,7 @@ const expect = (variable, variableName)=>
     }
     expectations.isNotNull = isNotNull.bind(null, expectations);
 
-    const isEqualTo = (expectations, value)=>
+    const isEqualTo = (expectations: any, value: any)=>
     {
         if(expectations.variable !== value)
         {
@@ -40,7 +40,7 @@ const expect = (variable, variableName)=>
     }
     expectations.isEqualTo = isEqualTo.bind(null, expectations);
 
-    const isGreaterThanOrEqualTo = (expectations, value)=>
+    const isGreaterThanOrEqualTo = (expectations: any, value: any)=>
     {
         if(expectations.variable < value)
         {
@@ -52,7 +52,7 @@ const expect = (variable, variableName)=>
     expectations.isGreaterThanOrEqualTo = isGreaterThanOrEqualTo.bind(null, expectations);
     expectations.isGTorEQ = isGreaterThanOrEqualTo.bind(null, expectations);
 
-    const isGreaterThan = (expectations, value)=>
+    const isGreaterThan = (expectations: any, value: any)=>
     {
         if(expectations.variable <= value)
         {
@@ -64,7 +64,7 @@ const expect = (variable, variableName)=>
     expectations.isGreaterThan = isGreaterThan.bind(null, expectations); 
     expectations.isGT = isGreaterThan.bind(null, expectations); 
 
-    const isLessThanOrEqualTo = (expectations, value)=>
+    const isLessThanOrEqualTo = (expectations: any, value: any)=>
     {
         if(expectations.variable > value)
         {
@@ -76,7 +76,7 @@ const expect = (variable, variableName)=>
     expectations.isLessThanOrEqualTo = isLessThanOrEqualTo.bind(null, expectations); 
     expectations.isLTorEQ = isLessThanOrEqualTo.bind(null, expectations); 
 
-    const isLessThan = (expectations, value)=>
+    const isLessThan = (expectations: any, value: any)=>
     {
         if(expectations.variable >= value)
         {
