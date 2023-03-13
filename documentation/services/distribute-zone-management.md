@@ -1,0 +1,4 @@
+## Notes
+Currently the component-set-simulator-responsibility-provider is not horizontally scaled, and has a single active replica and N passive replicas. When it is horizontally scaled then services will be provided by the passive replica of the workload distributor of component-set-simulator-responsibility-provider.
+
+ie in the future component-set-simulator-responsibility-provider will be horizontally scaled by have N active replicas which each uniquely handle a set of component-set's. To distribute these component-set's a workload-distributor will provide responsibilities to each component-set-simulator-responsibility-provider.
