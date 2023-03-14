@@ -1,17 +1,31 @@
-const expect = (variable: any, variableName: string): any=>
+export enum Severity{
+    WARNING = 0,
+    ERROR
+}
+const expect = (variable: any, variableName: string, severity: Severity = Severity.ERROR): any=>
 {
-    if(variable === undefined)
-    {
-        throw new Error(`Expected ${variableName} to be defined.`)
+    /*
+    let a: number | undefined = 3;
+    a = undefined;
+    expect(a, "a", Severity.WARNING).result == false ? console.log("here") : null;
+    */
+
+    let result: boolean = true;
+    if(variable === undefined){
+        const message = `Expected ${variableName} to be defined.`;
+        if(severity === Severity.ERROR){ result = false; throw new Error(message); }
+        if(severity === Severity.WARNING){ result = false; console.log(message); }
     }
 
-    const expectations: any = {variable, variableName};
+    const expectations: any = {variable, variableName, result};
 
     const isType = (expectations: any, type: string)=>
     {
         if(typeof(expectations.variable) !== type)
         {
-            throw new Error(`Expected ${expectations.variableName} to be of type ${type}.`)
+            const message = `Expected ${expectations.variableName} to be of type ${type}.`;
+            if(severity === Severity.ERROR){ expectations.result = false; throw new Error(message); }
+            if(severity === Severity.WARNING){ expectations.result = false; console.log(message); }
         }
 
         return expectations;
@@ -22,7 +36,9 @@ const expect = (variable: any, variableName: string): any=>
     {
         if(expectations.variable === null)
         {
-            throw new Error(`Expected ${expectations.variableName} to not be null.`)
+            const message = `Expected ${expectations.variableName} to not be null.`;
+            if(severity === Severity.ERROR){ expectations.result = false; throw new Error(message); }
+            if(severity === Severity.WARNING){ expectations.result = false; console.log(message); }
         }
 
         return expectations;
@@ -33,7 +49,9 @@ const expect = (variable: any, variableName: string): any=>
     {
         if(expectations.variable !== value)
         {
-            throw new Error(`Expected ${expectations.variableName} to be equal to ${value} but was ${expectations.variable}.`)
+            const message = `Expected ${expectations.variableName} to be equal to ${value} but was ${expectations.variable}.`;
+            if(severity === Severity.ERROR){ expectations.result = false; throw new Error(message); }
+            if(severity === Severity.WARNING){ expectations.result = false; console.log(message); }
         }
 
         return expectations;
@@ -44,7 +62,9 @@ const expect = (variable: any, variableName: string): any=>
     {
         if(expectations.variable < value)
         {
-            throw new Error(`Expected ${expectations.variableName} to be greater than or equal to ${value} but was ${expectations.variable}.`)
+            const message = `Expected ${expectations.variableName} to be greater than or equal to ${value} but was ${expectations.variable}.`;
+            if(severity === Severity.ERROR){ expectations.result = false; throw new Error(message); }
+            if(severity === Severity.WARNING){ expectations.result = false; console.log(message); }
         }
 
         return expectations;
@@ -56,7 +76,9 @@ const expect = (variable: any, variableName: string): any=>
     {
         if(expectations.variable <= value)
         {
-            throw new Error(`Expected ${expectations.variableName} to be greater than ${value} but was ${expectations.variable}.`)
+            const message = `Expected ${expectations.variableName} to be greater than ${value} but was ${expectations.variable}.`;
+            if(severity === Severity.ERROR){ expectations.result = false; throw new Error(message); }
+            if(severity === Severity.WARNING){ expectations.result = false; console.log(message); }
         }
 
         return expectations;
@@ -68,7 +90,9 @@ const expect = (variable: any, variableName: string): any=>
     {
         if(expectations.variable > value)
         {
-            throw new Error(`Expected ${expectations.variableName} to be less than or equal to ${value} but was ${expectations.variable}.`)
+            const message = `Expected ${expectations.variableName} to be less than or equal to ${value} but was ${expectations.variable}.`;
+            if(severity === Severity.ERROR){ expectations.result = false; throw new Error(message); }
+            if(severity === Severity.WARNING){ expectations.result = false; console.log(message); }
         }
 
         return expectations;
@@ -80,7 +104,9 @@ const expect = (variable: any, variableName: string): any=>
     {
         if(expectations.variable >= value)
         {
-            throw new Error(`Expected ${expectations.variableName} to be less than ${value} but was ${expectations.variable}.`)
+            const message = `Expected ${expectations.variableName} to be less than ${value} but was ${expectations.variable}.`;
+            if(severity === Severity.ERROR){ expectations.result = false; throw new Error(message); }
+            if(severity === Severity.WARNING){ expectations.result = false; console.log(message); }
         }
 
         return expectations;

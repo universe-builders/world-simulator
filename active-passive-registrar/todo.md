@@ -1,12 +1,12 @@
 # to do
-* get lease for first time
-* continually refresh lease and grab if expired
-* spawn 3 and kill them in random orders to ensure it works as expected
-* create a leader elector sidecar container
-    * accepts tcp conns
-    * on conn you add the lease you want to be active for
-    * on active you are infromed
-    * on passive you are informed
+
+* Accept TCP connections
+* Inbound: TCP Connection can specify the lease they want to be active-passive for
+* Outbound: Role
+
+
+
+
 * create a service registrar ambassador container
     * web server
     * you register and derigster for services
