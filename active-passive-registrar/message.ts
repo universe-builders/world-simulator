@@ -61,41 +61,6 @@ export function DeserializeSetLeaseInformationMSG(buffer: Buffer): SetLeaseInfor
         leaseNamespace     = deserialized.value;
         offset             = deserialized.offset;
     }
-    
-
-
-    /*
-    // get identity
-    const identityLength = buffer.readInt32LE(messageIndex);
-    messageIndex += 4;
-
-    const identityBuffer = buffer.subarray(messageIndex, messageIndex + identityLength);
-    messageIndex += identityLength;
-    
-    const identity = identityBuffer.toString();
-
-    console.log(identity)
-
-    // get leaseName
-    const leaseNameLength = buffer.readInt32LE(messageIndex);
-    messageIndex += 4;
-
-    const leaseNameBuffer = buffer.subarray(messageIndex, messageIndex + leaseNameLength);
-    messageIndex += leaseNameLength;
-    
-    const leaseName = leaseNameBuffer.toString();
-
-    console.log(leaseName)
-
-    // get leaseNamespace
-    const leaseNamespaceLength = buffer.readInt32LE(messageIndex);
-    messageIndex += 4;
-
-    const leaseNamespaceBuffer = buffer.subarray(messageIndex, messageIndex + leaseNamespaceLength);
-    messageIndex += leaseNamespaceLength;
-
-    const leaseNamespace = leaseNamespaceBuffer.toString();
-    */
 
     return {
         identity,
@@ -107,6 +72,28 @@ export function DeserializeSetLeaseInformationMSG(buffer: Buffer): SetLeaseInfor
 // Server -> Client
 export interface SetRoleMSG{
     role: Role
+}
+export function SerializeSetRoleMSG(message: SetRoleMSG): Buffer{
+    const buffer = Buffer.alloc(1024);
+    let offset   = 8;
+
+    // Write body.
+    offset = buffer.writeInt32LE(message.role as number, offset);
+
+    // Write header.
+    buffer.writeInt32LE(offset, 0);
+    buffer.writeInt32LE(MSG_ID.SetRoleMSG, 4);
+
+    // Slice buffer and return.
+    const finalBuffer = buffer.subarray(0, offset);
+    return finalBuffer;
+}
+export function DeserializeSetRoleMSG(buffer: Buffer): SetRoleMSG{
+    const role = buffer.readInt32LE(0) as Role;
+
+    return {
+        role
+    }
 }
 
 // Helpers
