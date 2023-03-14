@@ -1,3 +1,3 @@
 cd /root/build
-node --enable-source-maps index.js
+node --enable-source-maps server.js
 cd /root/source

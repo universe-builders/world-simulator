@@ -1,41 +1,13 @@
 import k8s, { FlowcontrolApiserverV1beta1Api } from "@kubernetes/client-node";
-import expect, {Severity} from "./expect.js";
 
-enum Role
-{
-    UNKNOWN = 0,
-    NONE,     // No-one has lease.
-    PASSIVE,  // Someone else has lease.
-    ACTIVE    // Has lease.
-}
+import expect, {Severity} from "./expect.js";
+import initializeK8sAPIClient from "./initializeK8sAPIClient.js";
+
+
 let role: Role = Role.UNKNOWN;
 let identity = "its_me_a_mario" + Math.random();
 
-function initializeAPIClient(): k8s.CoordinationV1Api{
-    // Create kube config.
-    let kubeConfig = null;
-    try{
-        kubeConfig = new k8s.KubeConfig();
-        kubeConfig.loadFromCluster();
-        expect(kubeConfig, "Kube Config").isNotNull();
-    }
-    catch(error){
-        console.log(`Caught error when initializing Kube Config.`, error);
-        process.exit(1);
-    }
 
-    // Create API client.
-    let kubeAPIClient = null;
-    try{
-        kubeAPIClient = kubeConfig.makeApiClient(k8s.CoordinationV1Api);
-    }
-    catch(error){
-        console.log(`Caught error when making API client.`, error);
-        process.exit(1);
-    }
-
-    return kubeAPIClient;
-}
 async function renewActive(kubeAPIClient: k8s.CoordinationV1Api)
 {
     // Read current lease.
@@ -193,7 +165,7 @@ function sleep(ms: number) {
 
 async function main()
 {
-   const kubeAPIClient = initializeAPIClient();
+   const kubeAPIClient = initializeK8sAPIClient();
 
     while(true)
     {
