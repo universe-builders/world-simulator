@@ -61,7 +61,7 @@ client.on('data', function(buffer) {
 });
 client.on('close', function() {
     console.log('Connection closed');
-    Process.exit(0);
+    process.exit(0);
 });
 
 step();

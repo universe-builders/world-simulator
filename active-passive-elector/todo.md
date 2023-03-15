@@ -3,4 +3,3 @@
 * Add label to pod with role
 * Have service select active pod
 * Have service select passive pod
-* Put src in /src

@@ -81,13 +81,17 @@ async function step(server: net.Server, connections: Connection[], kubeAPIClient
                     break;
             }
 
-            // Send client new role.
+            // Handle role changed.
             const roleChanged = conn.role !== prevRole;
             if(roleChanged && conn.role !== undefined)
             {
+                // Send client new role.
                 const message: SetRoleMSG = {role: conn.role as Role};
                 const buffer = SerializeSetRoleMSG(message);
                 conn.socket.write(buffer);
+
+                // Add label to pod.
+                
             }
         }
     )
@@ -127,48 +131,3 @@ async function main()
 }
 main()
 
-
-
-/*
-server.on('connection', function(socket) {
-    console.log('CONNECTED: ' + socket.remoteAddress + ':' + socket.remotePort);
-
-    const connection: Connection = 
-        {
-            socket,
-            role: undefined,
-            leaseInformation: undefined
-        }
-    connections.push(connection);
-
-    socket.readableLength
-
-*/
-    /*
-    socket.on('data', (data: Buffer) => {
-        
-        if(data.byteLength <= 4) return;
-
-
-        console.log('DATA ' + socket.remoteAddress + ': ' + data);
-    });
-    */
-
-
-    /*
-    
-    // Add a 'close' event handler to this instance of socket
-    sock.on('close', function() {
-        let index = sockets.findIndex(function(o) {
-            return o.remoteAddress === sock.remoteAddress && o.remotePort === sock.remotePort;
-        })
-        if (index !== -1) sockets.splice(index, 1);
-        console.log('CLOSED: ' + sock.remoteAddress + ' ' + sock.remotePort);
-    });
-
-    sockets.forEach(function(sock) {
-            sock.write(sock.remoteAddress + ':' + sock.remotePort + " said " + data + '\n');
-        });
-   
-});
- */
