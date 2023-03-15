@@ -1,7 +1,7 @@
 import k8s from "@kubernetes/client-node";
 import expect from "./expect.js";
 
-export default function initializeK8sAPIClient(): k8s.CoordinationV1Api{
+export default function initializeK8sCoordAPIClient(): k8s.CoordinationV1Api{
     // Create kube config.
     let kubeConfig = null;
     try{
