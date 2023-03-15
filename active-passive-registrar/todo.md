@@ -1,6 +1,8 @@
-# To Do
+# to do
 
-* 
+* Accept TCP connections
+* Inbound: TCP Connection can specify the lease they want to be active-passive for
+* Outbound: Role
 
 
 

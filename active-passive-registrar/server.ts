@@ -1,14 +1,9 @@
 import net from "net";
-import k8s from "@kubernetes/client-node";
-
 import Connection from "./connection.js";
-import { Role } from "./role.js";
-import {MSG_ID, DeserializeSetLeaseInformationMSG, SerializeSetRoleMSG, SetRoleMSG} from "./message.js";
-import transitionToActiveIfAppropriate from "./transitionToActiveIfAppropriate.js";
-import renewActiveLease from "./renewActiveLease.js";
-import initializeK8sAPIClient from "./initializeK8sAPIClient.js";
+//import { Role } from "./role.js";
+import {MSG_ID, DeserializeSetLeaseInformationMSG} from "./message.js";
 
-async function step(server: net.Server, connections: Connection[], kubeAPIClient: k8s.CoordinationV1Api)
+async function step(server: net.Server, connections: Connection[])
 {
     // Read and buffer data.
     connections.forEach(
@@ -40,17 +35,7 @@ async function step(server: net.Server, connections: Connection[], kubeAPIClient
                 if(messageType == MSG_ID.SetLeaseInformationMSG)
                 {
                     const setLeaseInformationMSG = DeserializeSetLeaseInformationMSG(messageBuffer);
-
-                    // Set data on conn.
-                    conn.leaseInformation = 
-                        {
-                            identity:       setLeaseInformationMSG.identity,
-                            leaseName:      setLeaseInformationMSG.leaseName,
-                            leaseNamespace: setLeaseInformationMSG.leaseNamespace
-                        }
-
-                    // Role is undefined as new lease information received.
-                    conn.role = undefined;
+                    console.log(setLeaseInformationMSG)
                 }
                 else
                 {
@@ -63,43 +48,13 @@ async function step(server: net.Server, connections: Connection[], kubeAPIClient
         }
     )
 
-    // Handle changing and syncing roles.
-    connections.forEach(
-        async (conn: Connection)=>{
-            if(conn.leaseInformation === undefined) return; // Skip connections that don't have any lease info, thus no role to gain.
-
-            // Change roles.
-            const prevRole = conn.role;
-            switch(conn.role)
-            {
-                case undefined:
-                case Role.PASSIVE:
-                    conn.role = await transitionToActiveIfAppropriate(kubeAPIClient, conn.leaseInformation.identity, conn.role);
-                    break;
-                case Role.ACTIVE:
-                    conn.role = await renewActiveLease(kubeAPIClient, conn.leaseInformation.identity, conn.role);
-                    break;
-            }
-
-            // Send client new role.
-            const roleChanged = conn.role !== prevRole;
-            if(roleChanged && conn.role !== undefined)
-            {
-                const message: SetRoleMSG = {role: conn.role as Role};
-                const buffer = SerializeSetRoleMSG(message);
-                conn.socket.write(buffer);
-            }
-        }
-    )
-
-    setTimeout(step.bind(null, server, connections, kubeAPIClient), 5000);
+    setTimeout(step.bind(null, server, connections), 5000);
 }
 async function main()
 {
     const port = 7070;
     const host = '127.0.0.1';
     const connections: Connection[] = [];
-    const kubeAPIClient = initializeK8sAPIClient();
 
     const server = net.createServer();
     server.listen(port, host, () => {
@@ -114,16 +69,9 @@ async function main()
             leaseInformation: undefined
         }
         connections.push(connection);
-
-        socket.on('close', function() {
-            let index = connections.findIndex(function(c) {
-                return c.socket.remoteAddress === socket.remoteAddress && c.socket.remotePort === socket.remotePort;
-            })
-            if (index !== -1) connections.splice(index, 1);
-        });
     });
-    
-    step(server, connections, kubeAPIClient);
+
+    step(server, connections);
 }
 main()
 
