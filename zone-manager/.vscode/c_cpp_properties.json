@@ -3,7 +3,11 @@
         {
             "name": "linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/third-party/kubernetes-client/c/kubernetes/include",
+                "${workspaceFolder}/third-party/kubernetes-client/c/kubernetes/model",
+                "${workspaceFolder}/third-party/kubernetes-client/c/kubernetes/api",
+                "${workspaceFolder}/third-party/kubernetes-client/c/kubernetes/config"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang-15",

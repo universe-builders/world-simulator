@@ -5,15 +5,14 @@
             "name": "debug: clang",
             "type": "lldb",
             "request": "launch",
-            //"program": "${fileDirname}/${fileBasenameNoExtension}",
-            "program": "/root/build/zone-manager",
+            "program": "${fileDirname}/${fileBasenameNoExtension}",
             "args": [],
             //"stopAtEntry": true,
-            //"cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}",
             //"environment": [],
             //"externalConsole": false,
             //"MIMode": "lldb",
-            //"preLaunchTask": "build: clang"
+            "preLaunchTask": "build: clang"
         }
     ]
 }

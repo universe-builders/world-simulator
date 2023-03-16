@@ -1,5 +1,3 @@
 cmake_minimum_required(VERSION 3.18.4)
 project(zone-manager C)
-find_package(${pkgName} CONFIG REQUIRED COMPONENTS ${pkgName})
 add_executable(${PROJECT_NAME} src/main.c)
-target_link_libraries(list_pod PRIVATE ${pkgName}::${pkgName})

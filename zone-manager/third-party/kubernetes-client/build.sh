@@ -1,3 +1,5 @@
+# Source: https://github.com/kubernetes-client/c
+
 # Clone the repo
 git clone https://github.com/kubernetes-client/c
 CLIENT_REPO_ROOT=${PWD}/c
@@ -26,6 +28,11 @@ make install
 
 # Move into the Kubernetes directory
 cd ${CLIENT_REPO_ROOT}/kubernetes
+
+# Bug Fix, I think this is a K8s bug...
+echo "add_compile_definitions(HAVE_SECURE_GETENV)" >> CMakeLists.txt
+echo "add_compile_definitions(HAVE_GETENV)" >> CMakeLists.txt
+echo "add_compile_definitions(HAVE_STRNDUP)" >> CMakeLists.txt
 
 # Build
 mkdir build
