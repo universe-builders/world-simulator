@@ -1,3 +1,6 @@
 #!/bin/bash
 
-cmake -S /root/zone-manager/src -B /root/build
+cmake -S /root/zone-manager -B /root/build
+cd /root/build
+make
+cd /root/zone-manager

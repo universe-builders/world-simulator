@@ -1,3 +1,3 @@
 # To Do
 
-* Get a basic development environment up and running.
+* Basic usage of K8s C client.
