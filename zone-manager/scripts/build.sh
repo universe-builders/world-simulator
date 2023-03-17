@@ -2,5 +2,5 @@
 
 cmake -S /root/zone-manager -B /root/build
 cd /root/build
-make
+make VERBOSE=1
 cd /root/zone-manager

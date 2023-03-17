@@ -1,5 +1,13 @@
 {
     "files.associations": {
-        "incluster_config.h": "c"
-    }
+        "incluster_config.h": "c",
+        "initialize_k8s_core_api_client.h": "c",
+        "corev1api.h": "c",
+        "apiclient.h": "c",
+        "coordinationv1api.h": "c",
+        "v1_lease.h": "c",
+        "role.h": "c",
+        "renew_active_lease.h": "c"
+    },
+    "cmake.configureOnOpen": false
 }

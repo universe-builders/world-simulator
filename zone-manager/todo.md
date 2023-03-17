@@ -1,8 +1,14 @@
 # To Do
 
+* Implement active-passive election in C
+    * Accept TCP connections.
+    * Create a struct similar to TS implementation.
+
+
+
+
 * service: distribute-zone-simulation
     * Implement active-passive election in C
-        * Justify this first
     * Add sidecar for active-passive election
     * Grab active lock for service distribute-zone-simulation
     * Accept TCP connections
