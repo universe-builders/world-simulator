@@ -1,11 +1,9 @@
+#!/bin/bash
 # Source: https://github.com/kubernetes-client/c
 
 # Clone the repo
 git clone https://github.com/kubernetes-client/c
 CLIENT_REPO_ROOT=${PWD}/c
-
-# Install pre-requisites
-apt-get install libssl-dev libcurl4-openssl-dev uncrustify
 
 # Build pre-requisite: libwebsockets
 git clone https://libwebsockets.org/repo/libwebsockets --depth 1 --branch v4.2-stable
@@ -29,7 +27,9 @@ make install
 # Move into the Kubernetes directory
 cd ${CLIENT_REPO_ROOT}/kubernetes
 
-# Bug Fix, I think this is a K8s bug...
+# Bug Fix, I think this is a K8s bug.
+# For one reason or another (maybe naivety of cmake) K8s was being built without
+# these defintions -- even though they were being checked by cmake and passed.
 echo "add_compile_definitions(HAVE_SECURE_GETENV)" >> CMakeLists.txt
 echo "add_compile_definitions(HAVE_GETENV)" >> CMakeLists.txt
 echo "add_compile_definitions(HAVE_STRNDUP)" >> CMakeLists.txt
@@ -37,7 +37,6 @@ echo "add_compile_definitions(HAVE_STRNDUP)" >> CMakeLists.txt
 # Build
 mkdir build
 cd build
-# If you don't need to debug the C client library:
 cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..
 # If you want to use `gdb` to debug the C client library, add `-DCMAKE_BUILD_TYPE=Debug` to the cmake command line, e.g.
 # cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr/local ..
