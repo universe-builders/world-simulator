@@ -3,6 +3,9 @@
         {
             "name": "linux",
             "includePath": [
+                "/usr/include/**",
+                "/usr/include",
+                "/usr/include/linux",
                 "${workspaceFolder}/src",
                 "${workspaceFolder}/third-party/kubernetes-client/c/kubernetes/include",
                 "${workspaceFolder}/third-party/kubernetes-client/c/kubernetes/model",

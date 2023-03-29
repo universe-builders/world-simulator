@@ -1,0 +1,1 @@
+/usr/bin/clang-15 CMakeFiles/zone-manager.dir/src/init/initialize_k8s_core_api_client.c.o CMakeFiles/zone-manager.dir/src/lease/renew_active_lease.c.o CMakeFiles/zone-manager.dir/src/main.c.o -o zone-manager  -Wl,-rpath,/usr/local/lib /usr/local/lib/libkubernetes.so /usr/local/lib/libyaml.so /usr/local/lib/libwebsockets.so 

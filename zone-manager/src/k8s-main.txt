@@ -1,0 +1,35 @@
+/* K8s */
+#include <CoreV1API.h>
+#include <kube_config.h>
+#include <apiClient.h>
+#include <CoreV1API.h>
+#include <CoordinationV1API.h>
+
+/* stdlib */
+#include <malloc.h>
+#include <stdio.h>
+#include <errno.h>
+
+/* zone-manager */
+#include "init/initialize_k8s_core_api_client.h"
+#include "role/role.h"
+#include "lease/renew_active_lease.h"
+
+int main(int argc, char *argv[])
+{
+    apiClient_t* apiClient = initialize_k8s_core_api_client();
+
+    Role role = renew_active_lease(apiClient);
+
+/*
+    apiClient_free(apiClient);
+    apiClient = NULL;
+    free_client_config(basePath, sslConfig, apiKeys);
+    basePath = NULL;
+    sslConfig = NULL;
+    apiKeys = NULL;
+    apiClient_unsetupGlobalEnv();
+    */
+
+    return 0;
+}

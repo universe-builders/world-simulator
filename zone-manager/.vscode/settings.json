@@ -7,7 +7,14 @@
         "coordinationv1api.h": "c",
         "v1_lease.h": "c",
         "role.h": "c",
-        "renew_active_lease.h": "c"
+        "renew_active_lease.h": "c",
+        "types.h": "c",
+        "stdlib.h": "c",
+        "string.h": "c",
+        "errno.h": "c",
+        "unistd.h": "c",
+        "netdb.h": "c",
+        "time.h": "c"
     },
     "cmake.configureOnOpen": false
 }
