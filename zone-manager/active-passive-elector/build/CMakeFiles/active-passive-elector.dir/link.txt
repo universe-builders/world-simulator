@@ -1,0 +1,1 @@
+/usr/bin/clang-15 CMakeFiles/active-passive-elector.dir/source/main.c.o CMakeFiles/active-passive-elector.dir/source/process-control/init.c.o CMakeFiles/active-passive-elector.dir/source/tcp-server/accept-clients.c.o CMakeFiles/active-passive-elector.dir/source/tcp-server/init.c.o -o active-passive-elector 

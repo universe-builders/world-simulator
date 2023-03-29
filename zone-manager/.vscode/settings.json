@@ -14,7 +14,11 @@
         "errno.h": "c",
         "unistd.h": "c",
         "netdb.h": "c",
-        "time.h": "c"
+        "time.h": "c",
+        "init-process-control.h": "c",
+        "model.h": "c",
+        "init.h": "c",
+        "socket.h": "c"
     },
     "cmake.configureOnOpen": false
 }

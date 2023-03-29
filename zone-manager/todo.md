@@ -1,10 +1,9 @@
 # To Do
 
 * Implement active-passive election in C
-    * Accept TCP connections.
-    * Create a struct similar to TS implementation.
+    * Allow receiving SetLeaseInformationMSG
 
-
+    * Proper dynamic array setup for client sockets.
 
 
 * service: distribute-zone-simulation
