@@ -1,0 +1,1 @@
+/usr/bin/clang-15 CMakeFiles/client.dir/source/main.c.o CMakeFiles/client.dir/source/messages/Set_Lease_Info_Message/deserialize.c.o CMakeFiles/client.dir/source/messages/Set_Lease_Info_Message/serialize.c.o CMakeFiles/client.dir/source/messages/Set_Role_Message/deserialize.c.o CMakeFiles/client.dir/source/messages/Set_Role_Message/serialize.c.o -o client 

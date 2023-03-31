@@ -1,10 +1,11 @@
 # To Do
 
 * Implement active-passive election in C
-    * Allow receiving SetLeaseInformationMSG
-
-    * Proper dynamic array setup for client sockets.
-
+    * Rename Process_Control, TCP's, with new naming convention in fns.
+    * Proper dynamic array/list setup for client sockets (how is it used?).
+    * Heartbeat.
+    * Disconnect client in TCP_Server properly (on fail write/read etc).
+    * Integrate K8s.
 
 * service: distribute-zone-simulation
     * Implement active-passive election in C

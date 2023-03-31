@@ -18,7 +18,22 @@
         "init-process-control.h": "c",
         "model.h": "c",
         "init.h": "c",
-        "socket.h": "c"
+        "socket.h": "c",
+        "buffer-data-from-connection.h": "c",
+        "cerrno": "c",
+        "errno-base.h": "c",
+        "buffer-set-lease-info-message.h": "c",
+        "buffer_set_lease_info_message.h": "c",
+        "message_header.h": "c",
+        "message_types.h": "c",
+        "deserialize_set_lease_info_message.h": "c",
+        "tcp_server.h": "c",
+        "buffer_data_from_clients.h": "c",
+        "tcp_connection.h": "c",
+        "serialize.h": "c",
+        "set_lease_info_message.h": "c",
+        "deserialize.h": "c",
+        "set_role_message.h": "c"
     },
     "cmake.configureOnOpen": false
 }

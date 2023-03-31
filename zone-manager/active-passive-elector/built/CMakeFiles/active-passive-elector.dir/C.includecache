@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/root/zone-manager/active-passive-elector/source/messages/Message_Header.h
+
+/root/zone-manager/active-passive-elector/source/messages/Set_Role_Message/Set_Role_Message.h
+
+/root/zone-manager/active-passive-elector/source/messages/Set_Role_Message/deserialize.c
+Set_Role_Message.h
+/root/zone-manager/active-passive-elector/source/messages/Set_Role_Message/Set_Role_Message.h
+../message_types.h
+/root/zone-manager/active-passive-elector/source/messages/message_types.h
+../Message_Header.h
+/root/zone-manager/active-passive-elector/source/messages/Message_Header.h
+
+/root/zone-manager/active-passive-elector/source/messages/Set_Role_Message/serialize.c
+string.h
+-
+../message_types.h
+/root/zone-manager/active-passive-elector/source/messages/message_types.h
+../Message_Header.h
+/root/zone-manager/active-passive-elector/source/messages/Message_Header.h
+Set_Role_Message.h
+/root/zone-manager/active-passive-elector/source/messages/Set_Role_Message/Set_Role_Message.h
+
+/root/zone-manager/active-passive-elector/source/messages/message_types.h
+

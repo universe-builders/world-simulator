@@ -1,3 +1,0 @@
-/root/zone-manager/active-passive-elector/build/CMakeFiles/rebuild_cache.dir
-/root/zone-manager/active-passive-elector/build/CMakeFiles/edit_cache.dir
-/root/zone-manager/active-passive-elector/build/CMakeFiles/active-passive-elector.dir
