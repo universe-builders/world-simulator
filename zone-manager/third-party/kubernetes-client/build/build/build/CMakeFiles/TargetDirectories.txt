@@ -1,0 +1,2 @@
+/root/zone-manager/third-party/kubernetes-client/build/build/build/CMakeFiles/rebuild_cache.dir
+/root/zone-manager/third-party/kubernetes-client/build/build/build/CMakeFiles/edit_cache.dir

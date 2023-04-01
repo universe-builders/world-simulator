@@ -31,6 +31,9 @@ int main(int argc, char *argv[]){
         printf("Failed to init TCP server.\n");
     }
 
+    int client_roles[MAX_CLIENTS];
+    memset(client_roles, 0, sizeof(client_roles));
+
     while(1){
         if(accept_clients(&server) == -1){
             printf("Error when accepting clients. Error: %i\n", errno);
@@ -57,14 +60,14 @@ int main(int argc, char *argv[]){
 
                     printf("%s %s %s\n", message.identity, message.lease_name, message.lease_namespace);
                     printf("Processed SET_LEASE_INFO_MSG_ID\n");
-                } 
+                }/*
                 else if(message_header->message_type == SET_ROLE_MSG_ID){
                     Set_Role_Message message;
                     deserialize_Set_Role_Message(buffer, &message);
 
                     printf("Role: %i\n", message.role);
                     printf("Processed SET_ROLE_MSG\n");
-                }
+                }*/
                 else{
                     printf("[Warning]: Client sent a message with an unhandled message type. Type: %i\n", message_header->message_type);
                     client_connection->socket = 0;
