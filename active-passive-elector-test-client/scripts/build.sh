@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cmake -S /root/zone-manager/client -B /root/zone-manager/client/built
-cd /root/zone-manager/client/built
+cmake -S /root/active-passive-elector-test-client -B /root/active-passive-elector-test-client/built
+cd /root/active-passive-elector-test-client/built
 make VERBOSE=1
-cd /root/zone-manager/client
+cd /root/active-passive-elector-test-client
