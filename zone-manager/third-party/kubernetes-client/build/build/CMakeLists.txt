@@ -1,3 +1,0 @@
-add_compile_definitions(HAVE_SECURE_GETENV)
-add_compile_definitions(HAVE_GETENV)
-add_compile_definitions(HAVE_STRNDUP)
