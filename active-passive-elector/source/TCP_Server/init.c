@@ -19,8 +19,6 @@ int init_tcp_server(TCP_Server* server, int port){
     
     server->clients = 0;
 
-    memset(&server->client_connections, 0, sizeof(server->client_connections));
-
     server->socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if(server->socket == -1){
         printf("Failed to create socket. Error: %i. Return: %i\n", errno, server->socket);
