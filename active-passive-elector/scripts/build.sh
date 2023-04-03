@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cmake -S /root/zone-manager/active-passive-elector -B /root/zone-manager/active-passive-elector/built
-cd /root/zone-manager/active-passive-elector/built
+cmake -S /root/active-passive-elector -B /root/active-passive-elector/built
+cd /root/active-passive-elector/built
 make VERBOSE=1
-cd /root/zone-manager
+cd /root/active-passive-elector

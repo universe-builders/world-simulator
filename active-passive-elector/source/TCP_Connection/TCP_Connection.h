@@ -1,5 +1,4 @@
-#ifndef TCP_CONNECTION_MODEL_H
-#define TCP_CONNECTION_MODEL_H
+#pragma once
 
 #include "../types/byte.h"
 
@@ -10,5 +9,3 @@ typedef struct TCP_Connection{
     byte recv_buffer[MAX_RECV_BUFFER];
     int  recv_buffered;
 } TCP_Connection;
-
-#endif

@@ -16,6 +16,9 @@ void sigpipe_signal_handler(int signo){
 
 int init_tcp_server(TCP_Server* server, int port){
     signal(SIGPIPE, sigpipe_signal_handler);
+    
+    server->clients = 0;
+    server->client_connections = 0x00;
 
     server->socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if(server->socket == -1){
