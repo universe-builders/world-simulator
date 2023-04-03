@@ -45,7 +45,7 @@ int main(int argc, char *argv[]){
         }
 
         if(db.server.clients > 0){
-            Linked_List_Node* client = &db.server.client_connections;
+            Linked_List_Node* client = db.server.client_connections;
             while(client != 0x00){
                 TCP_Connection* client_connection = (TCP_Connection*)( client->data );
 

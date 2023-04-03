@@ -9,8 +9,8 @@ typedef struct TCP_Server{
     int    socket;
     struct sockaddr_in address;
 
-    int              clients;            // The number of client_connections.
-    Linked_List_Node client_connections;
+    int               clients;            // The number of client_connections.
+    Linked_List_Node* client_connections;
     //TCP_Connection client_connections[MAX_CLIENTS];
     
 } TCP_Server;
