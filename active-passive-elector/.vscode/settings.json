@@ -6,7 +6,8 @@
         "init.h": "c",
         "tcp_server.h": "c",
         "tcp_connection.h": "c",
-        "doubly_linked_list_node.h": "c"
+        "doubly_linked_list_node.h": "c",
+        "accept_client.h": "c"
     },
     "cmake.configureOnOpen": false
 }

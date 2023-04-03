@@ -11,7 +11,7 @@
 #include "../Doubly_Linked_List/Doubly_Linked_List_Node.h"
 #include "../Doubly_Linked_List/init.h"
 
-int accept_client(TCP_Server* server, TCP_Connection* accepted_client_connection){
+int accept_clients(TCP_Server* server){
     int client_socket = accept(server->socket, NULL, NULL);
     if(client_socket == -1 && errno != EAGAIN && errno != EWOULDBLOCK){
         printf("Failed to accept client socket. Error: %i\n", errno);
@@ -24,8 +24,23 @@ int accept_client(TCP_Server* server, TCP_Connection* accepted_client_connection
         return -1;
     }
 
-    init_tcp_connection(accepted_client_connection, client_socket);
+    TCP_Connection* client_connection = malloc(sizeof(TCP_Connection));
+    init_tcp_connection(client_connection, client_socket);
 
+    Doubly_Linked_List_Node* client = malloc(sizeof(Doubly_Linked_List_Node));
+
+    if(server->clients == 0){
+        init_Doubly_Linked_List_Node(client, client_connection, 0x00, 0x00);
+        server->client_connections = client;
+    } else{
+        // Add node to front of list for O(1) insertion.
+        init_Doubly_Linked_List_Node(client, client_connection, 0x00, 0x00);
+        client->next                     = server->client_connections;
+        server->client_connections->prev = client;
+        server->client_connections       = client;
+    }
+
+    server->clients += 1;
     printf("Accepted client\n");
 
     return 1;
