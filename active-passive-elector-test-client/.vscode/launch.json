@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "debug: clang",
+            "type": "lldb",
+            "request": "launch",
+            "program": "/root/active-passive-elector-test-client/built/active-passive-elector-test-client",
+            "args": ["127.0.0.1"],
+            "cwd": "/root/active-passive-elector-test-client",
+            "preLaunchTask": "build: cmake"
+            //"stopAtEntry": true,
+        }
+    ]
+}

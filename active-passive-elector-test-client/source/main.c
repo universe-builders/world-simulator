@@ -20,8 +20,10 @@
 
 int main(int argc, char *argv[])
 {
+    printf("%s\n", argv[1]);
+
     if(argc != 2){
-        printf("\n Usage: %s <ip of server> \n",argv[0]);
+        printf("\n Usage: %s <ip of server> \n", argv[0]);
         return 1;
     } 
 
@@ -48,7 +50,7 @@ int main(int argc, char *argv[])
        exit(1);
     }
 
-/*
+
     Set_Lease_Info_Message set_lease_info_message;
     set_lease_info_message.identity = "my-identity-is-this";
     set_lease_info_message.lease_name = "some-lease-name i guess";
@@ -56,12 +58,14 @@ int main(int argc, char *argv[])
 
     char buffer[1024];
     int buffered = serialize_Set_Lease_Info_Message(&buffer, sizeof(buffer), &set_lease_info_message);
-*/
 
+
+/*
     Set_Role_Message set_role_message;
     set_role_message.role = 12999;
     char buffer[1024];
     int buffered = serialize_Set_Role_Message(&buffer, sizeof(buffer), &set_role_message);
+*/
 
     if(write(client.socket, &buffer, buffered) == -1){
         printf("Write failed. errno: %i\n", errno);
