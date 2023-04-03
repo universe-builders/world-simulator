@@ -1,3 +1,5 @@
+#include <stdio.h> // printf
+
 #include "TCP_Server.h"
 #include "../TCP_Connection/TCP_Connection.h"
 #include "../TCP_Connection/buffer_data_from_connection.h"

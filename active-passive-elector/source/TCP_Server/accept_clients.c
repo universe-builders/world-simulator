@@ -6,8 +6,10 @@
 #include <stdlib.h> // malloc
 
 #include "TCP_Server.h"
+#include "../TCP_Connection/TCP_Connection.h"
 #include "../TCP_Connection/init.h"
-#include "../Linked_List/init.h"
+#include "../Doubly_Linked_List/Doubly_Linked_List_Node.h"
+#include "../Doubly_Linked_List/init.h"
 
 int accept_clients(TCP_Server* server){
     while(1){
@@ -26,15 +28,17 @@ int accept_clients(TCP_Server* server){
         TCP_Connection* client_connection = malloc(sizeof(TCP_Connection));
         init_tcp_connection(client_connection, client_socket);
 
-        Linked_List_Node* client = malloc(sizeof(Linked_List_Node));
-        init_Linked_List_Node(client, client_connection);
+        Doubly_Linked_List_Node* client = malloc(sizeof(Doubly_Linked_List_Node));
 
         if(server->clients == 0){
+            init_Doubly_Linked_List_Node(client, client_connection, 0x00, 0x00);
             server->client_connections = client;
         } else{
             // Add node to front of list for O(1) insertion.
-            client->next = server->client_connections;
-            server->client_connections = client;
+            init_Doubly_Linked_List_Node(client, client_connection, 0x00, 0x00);
+            client->next                     = server->client_connections;
+            server->client_connections->prev = client;
+            server->client_connections       = client;
         }
 
         server->clients += 1;

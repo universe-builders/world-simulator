@@ -4,7 +4,9 @@
         "linked_list_node.h": "c",
         "buffer_data_from_connection.h": "c",
         "init.h": "c",
-        "tcp_server.h": "c"
+        "tcp_server.h": "c",
+        "tcp_connection.h": "c",
+        "doubly_linked_list_node.h": "c"
     },
     "cmake.configureOnOpen": false
 }
