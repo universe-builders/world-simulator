@@ -12,7 +12,11 @@
         "incluster_config.h": "c",
         "types.h": "c",
         "socket.h": "c",
-        "coordinationv1api.h": "c"
+        "coordinationv1api.h": "c",
+        "seconds_until_lease_expiry.h": "c",
+        "time.h": "c",
+        "string.h": "c",
+        "apiclient.h": "c"
     },
     "cmake.configureOnOpen": false
 }

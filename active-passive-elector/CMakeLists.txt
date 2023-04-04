@@ -5,6 +5,7 @@ project(active-passive-elector C)
 set(SOURCE_DIR /root/active-passive-elector/source/)
 file(GLOB_RECURSE SOURCE_FILES ${SOURCE_DIR}*.c)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
 
 # Compile flags.
 add_definitions("-g")
