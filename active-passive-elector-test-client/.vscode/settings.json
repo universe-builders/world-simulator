@@ -1,6 +1,10 @@
 {
     "files.associations": {
-        
+        "set_role_message.h": "c",
+        "message_header.h": "c",
+        "tcp_connection.h": "c",
+        "serialize.h": "c",
+        "deserialize.h": "c"
     },
     "cmake.configureOnOpen": false
 }

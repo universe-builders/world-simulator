@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <signal.h>
+#include <time.h>
 
 #include "model/tcp-client.h"
 
@@ -16,67 +18,133 @@
 #include "../../active-passive-elector/source/messages/Set_Lease_Info_Message/Set_Lease_Info_Message.h"
 #include "../../active-passive-elector/source/messages/Set_Lease_Info_Message/serialize.h"
 #include "../../active-passive-elector/source/messages/Set_Role_Message/Set_Role_Message.h"
-#include "../../active-passive-elector/source/messages/Set_Role_Message/serialize.h"
+#include "../../active-passive-elector/source/messages/Set_Role_Message/deserialize.h"
+#include "../../active-passive-elector/source/TCP_Connection/TCP_Connection.h"
+#include "../../active-passive-elector/source/TCP_Connection/buffer_data_from_connection.h"
+#include "../../active-passive-elector/source/Process_Control/Process_Control.h"
+#include "../../active-passive-elector/source/Process_Control/init.h"
 
-int main(int argc, char *argv[])
-{
-    printf("%s\n", argv[1]);
+typedef struct Client{
+    TCP_Connection connection;
+    time_t         last_heartbeat_time;
+} Client;
+typedef struct Program_Database{
+    Client client;
+    const char* server_ip;
+    const char* identity;
+} Program_Database;
 
-    if(argc != 2){
-        printf("\n Usage: %s <ip of server> \n", argv[0]);
-        return 1;
-    } 
+void process_messages_for_client(Client* client){
+    int bytes_processed = 0;
+    while(bytes_processed < client->connection.recv_buffered){
+        char* buffer = client->connection.recv_buffer + bytes_processed;
+        Message_Header* message_header = (Message_Header*)buffer;
+        if(message_header->message_length > client->connection.recv_buffered) break;
 
-    char recvBuff[1024];
-    memset(recvBuff, 0, sizeof(recvBuff));
+        if(message_header->message_type == HEARTBEAT_MSG_ID){
+            client->last_heartbeat_time = time(0x00);
+        }
+        else if(message_header->message_type == SET_ROLE_MSG_ID){
+            Set_Role_Message message;
+            deserialize_Set_Role_Message(buffer, &message);
 
-    TCP_Client client;
-    client.socket = socket(AF_INET, SOCK_STREAM, 0);
-    if(client.socket == -1){
+            printf("Role changed to: %i\n", message.role);
+        }
+        else{
+            printf("[Warning]: Server sent a message with an unhandled message type. Type: %i\n", message_header->message_type);
+        }
+
+        bytes_processed += message_header->message_length;
+    }
+
+    if(bytes_processed == client->connection.recv_buffered){
+        client->connection.recv_buffered = 0;
+    } else{
+        int bytes_unprocessed = client->connection.recv_buffered - bytes_processed;
+        memcpy(client->connection.recv_buffer, client->connection.recv_buffer + bytes_processed, bytes_unprocessed);
+        client->connection.recv_buffered = bytes_unprocessed;
+    }
+}
+
+int init(Program_Database* db, char *argv[]){
+    db->server_ip = argv[1];
+    db->identity  = argv[2];
+
+    db->client.connection.socket = socket(AF_INET, SOCK_STREAM, 0);
+    if(db->client.connection.socket == -1){
         printf("Failed to create socket. Error: %i\n", errno);
-        exit(1);
+        return -1;
     }
-    memset(&client.server_address, 0, sizeof(client.server_address));
-    client.server_address.sin_family = AF_INET;
-    client.server_address.sin_port   = htons(5000); 
+    struct sockaddr_in server_address;
+    memset(&server_address, 0, sizeof(server_address));
+    server_address.sin_family = AF_INET;
+    server_address.sin_port   = htons(5001); 
 
-    if(inet_pton(AF_INET, argv[1], &client.server_address.sin_addr) != 1){
+    if(inet_pton(AF_INET, db->server_ip, &server_address.sin_addr) != 1){
         printf("Failed to convert IP address from textual. Error: %i\n", errno);
-        exit(1);
+        return -1;
     } 
 
-    if(connect(client.socket, (const struct sockaddr*)&client.server_address, sizeof(client.server_address)) != 0){
+    if(connect(db->client.connection.socket, (const struct sockaddr*)&server_address, sizeof(server_address)) != 0){
        printf("Failed to connect to server. Error: %i\n", errno);
-       exit(1);
+       return -1;
     }
-
 
     Set_Lease_Info_Message set_lease_info_message;
-    set_lease_info_message.identity = "my-identity-is-this";
-    set_lease_info_message.lease_name = "some-lease-name i guess";
-    set_lease_info_message.lease_namespace = "namespaces would be cool in C";
+    set_lease_info_message.identity = db->identity;
+    set_lease_info_message.lease_name = "active-passive-elector-test-lease";
+    set_lease_info_message.lease_namespace = "dev-env";
 
     char buffer[1024];
     int buffered = serialize_Set_Lease_Info_Message(&buffer, sizeof(buffer), &set_lease_info_message);
-
-
-/*
-    Set_Role_Message set_role_message;
-    set_role_message.role = 12999;
-    char buffer[1024];
-    int buffered = serialize_Set_Role_Message(&buffer, sizeof(buffer), &set_role_message);
-*/
-
-    if(write(client.socket, &buffer, buffered) == -1){
+    if(write(db->client.connection.socket, &buffer, buffered) == -1){
         printf("Write failed. errno: %i\n", errno);
+        return -1;
+    }
+
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    if(argc != 3){
+        printf("\n Usage: %s <ip of server> <identity> \n", argv[0]);
+        return 1;
+    }
+
+    init_process_control();
+    Program_Database* db = malloc(sizeof(Program_Database));
+    if(init(db, argv) != 0){
+        printf("Failed to init program db.\n");
+        exit(1);
+    }
+
+    while(1){
+        Message_Header heartbeat;
+        heartbeat.message_length = sizeof(heartbeat);
+        heartbeat.message_type   = HEARTBEAT_MSG_ID;
+        if(write(db->client.connection.socket, (void*)(&heartbeat), sizeof(heartbeat)) == -1){
+            printf("Write failed. errno: %i\n", errno);
+        }
+
+        buffer_data_from_connection(&db->client.connection);
+        process_messages_for_client(&db->client);
+
+        if(process_control.should_exit){
+            shutdown(db->client.connection.socket, SHUT_RDWR);
+            close(db->client.connection.socket);
+            exit(0);
+        }
+
+        sleep(1);
     }
 
 
     /*
 
     while(1){
-        int bytes_read = read(client.socket, recvBuff, sizeof(recvBuff) - 1);
-        if(fputs(recvBuff, stdout) == EOF){
+        int bytes_read = read(client.socket, recv_buffer, sizeof(recv_buffer) - 1);
+        if(fputs(recv_buffer, stdout) == EOF){
             printf("Failed to write to stdout. Errno: %i\n", errno);
             exit(1);
         }
