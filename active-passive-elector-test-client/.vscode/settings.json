@@ -4,7 +4,9 @@
         "message_header.h": "c",
         "tcp_connection.h": "c",
         "serialize.h": "c",
-        "deserialize.h": "c"
+        "deserialize.h": "c",
+        "cerrno": "c",
+        "system_error": "c"
     },
     "cmake.configureOnOpen": false
 }

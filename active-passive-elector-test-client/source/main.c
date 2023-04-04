@@ -10,6 +10,8 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <time.h>
+#include <unistd.h> // fcntl
+#include <fcntl.h> // fcntl
 
 #include "model/tcp-client.h"
 
@@ -23,6 +25,9 @@
 #include "../../active-passive-elector/source/TCP_Connection/buffer_data_from_connection.h"
 #include "../../active-passive-elector/source/Process_Control/Process_Control.h"
 #include "../../active-passive-elector/source/Process_Control/init.h"
+
+// Configuration.
+#define CLIENT_TIMEOUT_SECONDS 10
 
 typedef struct Client{
     TCP_Connection connection;
@@ -90,6 +95,13 @@ int init(Program_Database* db, char *argv[]){
        return -1;
     }
 
+    db->client.last_heartbeat_time = time(0x00);
+
+    if(fcntl(db->client.connection.socket, F_SETFL, O_NONBLOCK) == -1){
+        printf("Failed to set socket to non-blocking.\n");
+        return -1;
+    }
+
     Set_Lease_Info_Message set_lease_info_message;
     set_lease_info_message.identity = db->identity;
     set_lease_info_message.lease_name = "active-passive-elector-test-lease";
@@ -105,13 +117,20 @@ int init(Program_Database* db, char *argv[]){
     return 0;
 }
 
-int main(int argc, char *argv[])
-{
+void sigpipe_signal_handler(int signo){
+    if(signo == SIGPIPE){
+        // Do nothing, SIGPIPE means the connection closed on the server side.
+        // This will be detected in the write or in heartbeat.
+    }
+}
+
+int main(int argc, char *argv[]){
     if(argc != 3){
         printf("\n Usage: %s <ip of server> <identity> \n", argv[0]);
         return 1;
     }
 
+    signal(SIGPIPE, sigpipe_signal_handler);
     init_process_control();
     Program_Database* db = malloc(sizeof(Program_Database));
     if(init(db, argv) != 0){
@@ -124,11 +143,20 @@ int main(int argc, char *argv[])
         heartbeat.message_length = sizeof(heartbeat);
         heartbeat.message_type   = HEARTBEAT_MSG_ID;
         if(write(db->client.connection.socket, (void*)(&heartbeat), sizeof(heartbeat)) == -1){
+            if(errno == EPIPE){
+                printf("[Critical]: Exiting due to connection to server was disrupted.\n");
+                exit(1);
+            }
             printf("Write failed. errno: %i\n", errno);
         }
 
         buffer_data_from_connection(&db->client.connection);
         process_messages_for_client(&db->client);
+
+        if(time(0x00) - db->client.last_heartbeat_time > CLIENT_TIMEOUT_SECONDS){
+            printf("[Critical]: Exiting due to not receiving heartbeat within timeout.\n");
+            exit(1);
+        }
 
         if(process_control.should_exit){
             shutdown(db->client.connection.socket, SHUT_RDWR);
@@ -138,19 +166,6 @@ int main(int argc, char *argv[])
 
         sleep(1);
     }
-
-
-    /*
-
-    while(1){
-        int bytes_read = read(client.socket, recv_buffer, sizeof(recv_buffer) - 1);
-        if(fputs(recv_buffer, stdout) == EOF){
-            printf("Failed to write to stdout. Errno: %i\n", errno);
-            exit(1);
-        }
-        exit(0);
-    }
-    */
 
     return 0;
 }
