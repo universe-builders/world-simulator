@@ -3,9 +3,9 @@
         {
             "name": "linux",
             "includePath": [
-                "/root/active-passive-elector/source/**",
-                "/usr/include/**",
-                "/root/active-passive-elector/third-party/kubernetes-client/c/kubernetes/**"
+                "/root/active-passive-elector/source/**"
+                //"/usr/include/**",
+                //"/root/active-passive-elector/third-party/kubernetes-client/c/kubernetes/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang-15",

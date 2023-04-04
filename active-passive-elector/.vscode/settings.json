@@ -16,7 +16,8 @@
         "seconds_until_lease_expiry.h": "c",
         "time.h": "c",
         "string.h": "c",
-        "apiclient.h": "c"
+        "apiclient.h": "c",
+        "serialize.h": "c"
     },
     "cmake.configureOnOpen": false
 }

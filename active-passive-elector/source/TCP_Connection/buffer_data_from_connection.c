@@ -4,11 +4,11 @@
 
 int buffer_data_from_connection(TCP_Connection* connection){
     void* buffer = (void*)(connection->recv_buffer + connection->recv_buffered);
-    int bytesRemainingInBuffer = MAX_RECV_BUFFER - connection->recv_buffered;
-    int bytesRead = read(connection->socket, buffer, bytesRemainingInBuffer);
-    if(bytesRead == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) return 0;
+    int bytes_remaining_in_buffer = MAX_RECV_BUFFER - connection->recv_buffered;
+    int bytes_read = read(connection->socket, buffer, bytes_remaining_in_buffer);
+    if(bytes_read == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) return 0;
     else{
-        connection->recv_buffered += bytesRead;
-        return bytesRead;
+        connection->recv_buffered += bytes_read;
+        return bytes_read;
     }
 }

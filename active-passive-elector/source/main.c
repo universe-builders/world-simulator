@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <string.h> // memcpy
 #include <sys/types.h>
+#include <time.h> // time
 
 // Linux
 #include <sys/socket.h>
@@ -33,18 +34,22 @@
 #include "messages/Set_Lease_Info_Message/Set_Lease_Info_Message.h"
 #include "messages/Set_Lease_Info_Message/deserialize.h"
 #include "messages/Set_Role_Message/Set_Role_Message.h"
-#include "messages/Set_Role_Message/deserialize.h"
+#include "messages/Set_Role_Message/serialize.h"
 #include "K8s/initialize_k8s_core_api_client.h"
 #include "K8s/get_lease.h"
 #include "K8s/seconds_until_lease_expiry.h"
 #include "K8s/calculate_lease_next_renew_time.h"
 
+// Configuration.
+#define CLIENT_TIMEOUT_SECONDS 10
 #define MAX_IDENTITY_STRING_LEN 255
 #define MAX_LEASE_NAME_STRING_LEN 255
 #define MAX_LEASE_NAMESPACE_STRING_LEN 255
+
 typedef struct Client{
     TCP_Connection connection;
     int            role;
+    time_t         last_heartbeat_time;
     char           identity[MAX_IDENTITY_STRING_LEN + 1];
     char           lease_name[MAX_LEASE_NAME_STRING_LEN + 1];
     char           lease_namespace[MAX_LEASE_NAMESPACE_STRING_LEN + 1];
@@ -67,7 +72,7 @@ void init_next_client(Program_Database* db){
 }
 
 int init(Program_Database* db){
-    if(init_tcp_server(&db->server, 5000) == -1){
+    if(init_tcp_server(&db->server, 5001) == -1){
         printf("Failed to init TCP server.\n");
         return -1;
     }
@@ -119,6 +124,9 @@ void process_messages_for_client(Client* client){
             printf("%s %s %s\n", client->identity, client->lease_name, client->lease_namespace);
             printf("Processed SET_LEASE_INFO_MSG_ID\n");
         }
+        else if(message_header->message_type == HEARTBEAT_MSG_ID){
+            client->last_heartbeat_time = time(0x00);
+        }
         else{
             printf("[Warning]: Client sent a message with an unhandled message type. Type: %i\n", message_header->message_type);
             //client_connection->socket = 0;
@@ -151,6 +159,8 @@ int main(int argc, char *argv[]){
     while(1){
         // Accept new clients.
         while(accept_client(&db.server, &db.next_client->connection) == 1){
+            db.next_client->last_heartbeat_time = time(0x00);
+
             // Insert new client at start of list.            
             Doubly_Linked_List_Node* client_node = malloc(sizeof(Doubly_Linked_List_Node));
             client_node->data = db.next_client;
@@ -171,12 +181,41 @@ int main(int argc, char *argv[]){
                 buffer_data_from_connection(&client->connection);
                 process_messages_for_client(client);
 
+                // Disconnect client it it has failed to heartbeat within timeout.
+                if(time(0x00) - client->last_heartbeat_time > CLIENT_TIMEOUT_SECONDS){
+                    Doubly_Linked_List_Node* client_node_to_dc = client_node;
+                    client_node = client_node->next;
+
+                    shutdown(client->connection.socket, SHUT_RDWR);
+                    close(client->connection.socket);
+
+                    if(client_node_to_dc->prev != 0x00){
+                        client_node_to_dc->prev->next = client_node_to_dc->next;
+                    }
+                    if(client_node_to_dc->next != 0x00){
+                        client_node_to_dc->next->prev = client_node_to_dc->prev;
+                    }
+                    if(db.clients == client_node_to_dc){
+                        db.clients = client_node_to_dc->next;
+                    }
+
+                    db.number_of_clients -= 1;
+
+                    free(client);
+                    free(client_node_to_dc);
+
+                    printf("[Info] Disconnected client due to heartbeat.\n");
+                    continue;
+                }
+
                 // Skip trying to adjust role if no identity or lease provided by client yet.
                 if(client->identity[0] == 0 || client->lease_name[0] == 0 || client->lease_namespace[0] == 0){
                     client_node = client_node->next;
                     continue;
                 }
 
+                // Attempt to change role, if appropriate.
+                int role_before_changes = client->role;
                 v1_lease_t* lease = get_lease(db.k8s_api_client, client->lease_name, client->lease_namespace);
                 if(lease == 0x00){
                     printf("[Warning]: Failed to get lease. Lease Name: %s. Namespace: %s.\n", client->lease_name, client->lease_namespace);
@@ -250,6 +289,15 @@ int main(int argc, char *argv[]){
 
                         v1_lease_free(replaced_lease);
                     }
+                }
+
+                // Role changed, update client.
+                if(client->role != role_before_changes){
+                    Set_Role_Message set_role_message;
+                    set_role_message.role = client->role;
+                    char buffer[256];
+                    int buffered = serialize_Set_Role_Message(buffer, sizeof(buffer), &set_role_message);
+                    write(client->connection.socket, &buffer, buffered);
                 }
 
                 client_node = client_node->next;

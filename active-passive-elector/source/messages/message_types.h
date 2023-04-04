@@ -5,3 +5,6 @@
 
 // Server -> Client
 #define SET_ROLE_MSG_ID 1000
+
+// Server <-> Client
+#define HEARTBEAT_MSG_ID 2000
