@@ -1,10 +1,7 @@
-#ifndef PROCESS_CONTROL_H
-#define PROCESS_CONTROL_H
+#pragma once
 
 #include "../types/bool.h"
 
 typedef struct Process_Control{
-    bool should_exit;
+    int should_exit;
 } Process_Control;
-
-#endif

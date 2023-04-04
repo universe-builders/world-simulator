@@ -1,7 +1,7 @@
+#include <string.h> // strlen
 #include "Set_Lease_Info_Message.h"
 #include "../message_types.h"
 #include "../Message_Header.h"
-
 
 void deserialize_Set_Lease_Info_Message(void* buffer, Set_Lease_Info_Message* deserialized){
     Message_Header* message_header = (Message_Header*)buffer;

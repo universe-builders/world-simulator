@@ -1,15 +1,21 @@
+/* C STD */
+#include <errno.h> // errno
+#include <stdio.h> // printf
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h> // memcpy
+#include <sys/types.h>
+
+/* Linux */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h> // memcpy
-#include <sys/types.h>
-#include <time.h>
-#include <errno.h>
 
+/* K8s */
+#include <apiClient.h> // apiClient
+#include <CoordinationV1API.h> // v1_lease_t
+
+/* Universe Builders */
 #include "Process_Control/Process_Control.h"
 #include "Process_Control/init.h"
 #include "TCP_Server/TCP_Server.h"
@@ -28,10 +34,18 @@
 #include "messages/Set_Lease_Info_Message/deserialize.h"
 #include "messages/Set_Role_Message/Set_Role_Message.h"
 #include "messages/Set_Role_Message/deserialize.h"
+#include "K8s/initialize_k8s_core_api_client.h"
+#include "K8s/get_lease.h"
 
+#define MAX_IDENTITY_STRING_LEN 255
+#define MAX_LEASE_NAME_STRING_LEN 255
+#define MAX_LEASE_NAMESPACE_STRING_LEN 255
 typedef struct Client{
     TCP_Connection connection;
     int            role;
+    char           identity[MAX_IDENTITY_STRING_LEN + 1];
+    char           lease_name[MAX_LEASE_NAME_STRING_LEN + 1];
+    char           lease_namespace[MAX_LEASE_NAMESPACE_STRING_LEN + 1];
 } Client;
 
 typedef struct Program_Database{
@@ -39,11 +53,15 @@ typedef struct Program_Database{
     Doubly_Linked_List_Node* clients;
     int                      number_of_clients;
     Client*                  next_client;
+    apiClient_t*             k8s_api_client;
 } Program_Database;
 
 void init_next_client(Program_Database* db){
     db->next_client = malloc(sizeof(Client));
     db->next_client->role = ROLE_UNKNOWN;
+    db->next_client->identity[0] = 0;
+    db->next_client->lease_name[0] = 0;
+    db->next_client->lease_namespace[0] = 0;
 }
 
 int init(Program_Database* db){
@@ -56,6 +74,12 @@ int init(Program_Database* db){
     db->number_of_clients = 0;
 
     init_next_client(db);
+
+    db->k8s_api_client = initialize_k8s_core_api_client();
+    if(db->k8s_api_client == 0x00){
+        printf("Failed to initialize K8s API Client\n");
+        return -1;
+    }
 
     return 0;
 }
@@ -71,9 +95,26 @@ void process_messages_for_client(Client* client){
             Set_Lease_Info_Message message;
             deserialize_Set_Lease_Info_Message(buffer, &message);
 
-            // do stuff with message.
+            // Validate data.
+            const int identity_str_len = strlen(message.identity);
+            if(identity_str_len > MAX_IDENTITY_STRING_LEN){
+                printf("[Warning]: Client identity exceeded maximum length of %i. Identity: %s.", MAX_IDENTITY_STRING_LEN, message.identity);
+            }
+            const int lease_name_str_len = strlen(message.lease_name);
+            if(lease_name_str_len > MAX_LEASE_NAME_STRING_LEN){
+                printf("[Warning]: Client lease name exceeded maximum length of %i. Identity: %s.", MAX_LEASE_NAME_STRING_LEN, message.lease_name);
+            }
+            const int lease_namespace_str_len = strlen(message.lease_namespace);
+            if(lease_namespace_str_len > MAX_LEASE_NAMESPACE_STRING_LEN){
+                printf("[Warning]: Client lease namespace exceeded maximum length of %i. Identity: %s.", MAX_LEASE_NAMESPACE_STRING_LEN, message.lease_namespace);
+            }
 
-            printf("%s %s %s\n", message.identity, message.lease_name, message.lease_namespace);
+            // Store data in client.
+            memcpy(client->identity, message.identity, identity_str_len + 1);
+            memcpy(client->lease_name, message.lease_name, lease_name_str_len + 1);
+            memcpy(client->lease_namespace, message.lease_namespace, lease_namespace_str_len + 1);
+
+            printf("%s %s %s\n", client->identity, client->lease_name, client->lease_namespace);
             printf("Processed SET_LEASE_INFO_MSG_ID\n");
         }
         else{
@@ -128,11 +169,16 @@ int main(int argc, char *argv[]){
                 buffer_data_from_connection(&client->connection);
                 process_messages_for_client(client);
                 
-                if(client->role == ROLE_UNKNOWN){
-
+                if(client->role == ROLE_UNKNOWN && client->identity[0] != 0 && client->lease_name[0] != 0 && client->lease_namespace[0] != 0){
                     
+                    v1_lease_t* lease = get_lease(db.k8s_api_client, client->lease_name, client->lease_namespace);
+                    if(lease == 0x00){
+                        printf("[Warning]: Failed to get lease. Lease Name: %s. Namespace: %s.\n", client->lease_name, client->lease_namespace);
+                        client_node = client_node->next;
+                        continue;
+                    }
 
-                    // get lease
+
                     // if lease current
                         // if owned by this
                             // make active

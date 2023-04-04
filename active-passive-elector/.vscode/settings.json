@@ -7,7 +7,12 @@
         "tcp_server.h": "c",
         "tcp_connection.h": "c",
         "doubly_linked_list_node.h": "c",
-        "accept_client.h": "c"
+        "accept_client.h": "c",
+        "process_control.h": "c",
+        "incluster_config.h": "c",
+        "types.h": "c",
+        "socket.h": "c",
+        "coordinationv1api.h": "c"
     },
     "cmake.configureOnOpen": false
 }
