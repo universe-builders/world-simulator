@@ -92,7 +92,10 @@ int init(Program_Database* db){
     return 0;
 }
 
-void process_messages_for_client(Client* client){
+/**
+ * @return -1 for error, otherwise 0.
+*/
+int process_messages_for_client(Client* client){
     int bytes_processed = 0;
     while(bytes_processed < client->connection.recv_buffered){
         char* buffer = client->connection.recv_buffer + bytes_processed;
@@ -107,14 +110,17 @@ void process_messages_for_client(Client* client){
             const int identity_str_len = strlen(message.identity);
             if(identity_str_len > MAX_IDENTITY_STRING_LEN){
                 printf("[Warning]: Client identity exceeded maximum length of %i. Identity: %s.", MAX_IDENTITY_STRING_LEN, message.identity);
+                return -1;
             }
             const int lease_name_str_len = strlen(message.lease_name);
             if(lease_name_str_len > MAX_LEASE_NAME_STRING_LEN){
                 printf("[Warning]: Client lease name exceeded maximum length of %i. Identity: %s.", MAX_LEASE_NAME_STRING_LEN, message.lease_name);
+                return -1;
             }
             const int lease_namespace_str_len = strlen(message.lease_namespace);
             if(lease_namespace_str_len > MAX_LEASE_NAMESPACE_STRING_LEN){
                 printf("[Warning]: Client lease namespace exceeded maximum length of %i. Identity: %s.", MAX_LEASE_NAMESPACE_STRING_LEN, message.lease_namespace);
+                return -1;
             }
 
             // Store data in client.
@@ -134,14 +140,12 @@ void process_messages_for_client(Client* client){
             heartbeat.message_type   = HEARTBEAT_MSG_ID;
             if(write(client->connection.socket, (void*)(&heartbeat), sizeof(heartbeat)) == -1){
                 printf("Write failed. errno: %i\n", errno);
+                return -1;
             }
         }
         else{
             printf("[Warning]: Client sent a message with an unhandled message type. Type: %i\n", message_header->message_type);
-            //client_connection->socket = 0;
-            //server.clients -= 1;
-            break;
-            // TODO: Disconnect client properly.
+            return -1;
         }
 
         bytes_processed += message_header->message_length;
@@ -153,6 +157,84 @@ void process_messages_for_client(Client* client){
         int bytes_unprocessed = client->connection.recv_buffered - bytes_processed;
         memcpy(client->connection.recv_buffer, client->connection.recv_buffer + bytes_processed, bytes_unprocessed);
         client->connection.recv_buffered = bytes_unprocessed;
+    }
+
+    return 0;
+}
+
+void attempt_to_update_role(Program_Database* db, Client* client){
+    // Attempt to change role, if appropriate.
+    int role_before_changes = client->role;
+    v1_lease_t* lease = get_lease(db->k8s_api_client, client->lease_name, client->lease_namespace);
+    if(lease == 0x00 || db->k8s_api_client->response_code != 200){
+        printf("[Warning]: Failed to get lease. Lease Name: %s. Namespace: %s.\n", client->lease_name, client->lease_namespace);
+        v1_lease_free(lease);
+    }
+    // Lease expired or unowned, try to grab it and become active otherwise become passive.
+    else if(lease->spec->holder_identity == 0x00 || lease->spec->renew_time == 0x00 || seconds_until_lease_expiry(lease) <= 0){
+        lease->spec->holder_identity = client->identity;
+
+        char next_renew_time[256];
+        calculate_lease_next_renew_time(next_renew_time, sizeof(next_renew_time), lease);
+        lease->spec->renew_time = next_renew_time;
+
+        v1_lease_t* replaced_lease = CoordinationV1API_replaceNamespacedLease(
+            db->k8s_api_client,
+            client->lease_name,
+            client->lease_namespace, 
+            lease, 
+            0x00, 0x00, 0x00, 0x00
+        );
+        // Replaced lease has client as identity, replacement was successful.
+        if(db->k8s_api_client->response_code == 200 && strcmp(replaced_lease->spec->holder_identity, client->identity) == 0){
+            client->role = ROLE_ACTIVE;
+        }
+        // Replacement was unsuccessful, assume request was unsuccessful due to race condition
+        // and another client become active.
+        else{
+            client->role = ROLE_PASSIVE;
+        }
+
+        v1_lease_free(replaced_lease);
+    }
+    // Lease is owned by this identity, become active and renew if needed.
+    else if(lease->spec->holder_identity != 0x00 && strcmp(lease->spec->holder_identity, client->identity) == 0){
+        client->role = ROLE_ACTIVE;
+        
+        // Lease is ready to be renewed.
+        if(lease->spec->renew_time == 0x00 || seconds_until_lease_expiry(lease) <= SECONDS_BEFORE_EXPIRY_BEFORE_RENEWING){
+            char next_renew_time[256];
+            calculate_lease_next_renew_time(next_renew_time, sizeof(next_renew_time), lease);
+            lease->spec->renew_time = next_renew_time;
+            v1_lease_t* replaced_lease = CoordinationV1API_replaceNamespacedLease(
+                db->k8s_api_client,
+                client->lease_name,
+                client->lease_namespace, 
+                lease, 
+                0x00, 0x00, 0x00, 0x00
+            );
+            if(replaced_lease == 0x00){
+                printf("[Warning]: Failed to replace lease. Lease Name: %s. Namespace: %s.\n", client->lease_name, client->lease_namespace);
+            }
+
+            v1_lease_free(replaced_lease);
+        }
+        else{
+            v1_lease_free(lease);
+        }
+    }
+    // Lease is owned, become passive.
+    else{
+        client->role = ROLE_PASSIVE;
+    }
+
+    // Role changed, update client.
+    if(client->role != role_before_changes){
+        Set_Role_Message set_role_message;
+        set_role_message.role = client->role;
+        char buffer[256];
+        int buffered = serialize_Set_Role_Message(buffer, sizeof(buffer), &set_role_message);
+        write(client->connection.socket, &buffer, buffered);
     }
 }
 
@@ -187,33 +269,39 @@ int main(int argc, char *argv[]){
             while(client_node != 0x00){
                 Client* client = (Client*)( client_node->data );
 
-                buffer_data_from_connection(&client->connection);
-                process_messages_for_client(client);
+                #define disconnect_client() \
+                Doubly_Linked_List_Node* client_node_to_dc = client_node; \
+                client_node = client_node->next; \
+                shutdown(client->connection.socket, SHUT_RDWR); \
+                close(client->connection.socket); \
+                if(client_node_to_dc->prev != 0x00){ \
+                    client_node_to_dc->prev->next = client_node_to_dc->next; \
+                } \
+                if(client_node_to_dc->next != 0x00){ \
+                    client_node_to_dc->next->prev = client_node_to_dc->prev; \
+                } \
+                if(db->clients == client_node_to_dc){ \
+                    db->clients = client_node_to_dc->next; \
+                } \
+                db->number_of_clients -= 1; \
+                free(client); \
+                free(client_node_to_dc);
+
+                if(buffer_data_from_connection(&client->connection) == -1){
+                    printf("[Info] Disconnecting client due to error in buffering data from conn.\n");
+                    disconnect_client();
+                    continue;
+                }
+                if(process_messages_for_client(client) == -1){
+                    printf("[Info] Disconnecting client due to error in processing messages from conn.\n");
+                    disconnect_client();
+                    continue;
+                }
 
                 // Disconnect client it it has failed to heartbeat within timeout.
                 if(time(0x00) - client->last_heartbeat_time > CLIENT_TIMEOUT_SECONDS){
-                    Doubly_Linked_List_Node* client_node_to_dc = client_node;
-                    client_node = client_node->next;
-
-                    shutdown(client->connection.socket, SHUT_RDWR);
-                    close(client->connection.socket);
-
-                    if(client_node_to_dc->prev != 0x00){
-                        client_node_to_dc->prev->next = client_node_to_dc->next;
-                    }
-                    if(client_node_to_dc->next != 0x00){
-                        client_node_to_dc->next->prev = client_node_to_dc->prev;
-                    }
-                    if(db->clients == client_node_to_dc){
-                        db->clients = client_node_to_dc->next;
-                    }
-
-                    db->number_of_clients -= 1;
-
-                    free(client);
-                    free(client_node_to_dc);
-
-                    printf("[Info] Disconnected client due to heartbeat.\n");
+                    printf("[Info] Disconnected client due to heartbeat timeout.\n");
+                    disconnect_client();
                     continue;
                 }
 
@@ -223,79 +311,8 @@ int main(int argc, char *argv[]){
                     continue;
                 }
 
-                // Attempt to change role, if appropriate.
-                int role_before_changes = client->role;
-                v1_lease_t* lease = get_lease(db->k8s_api_client, client->lease_name, client->lease_namespace);
-                if(lease == 0x00 || db->k8s_api_client->response_code != 200){
-                    printf("[Warning]: Failed to get lease. Lease Name: %s. Namespace: %s.\n", client->lease_name, client->lease_namespace);
-                    v1_lease_free(lease);
-                }
-                // Lease expired or unowned, try to grab it and become active otherwise become passive.
-                else if(lease->spec->holder_identity == 0x00 || lease->spec->renew_time == 0x00 || seconds_until_lease_expiry(lease) <= 0){
-                    lease->spec->holder_identity = client->identity;
-
-                    char next_renew_time[256];
-                    calculate_lease_next_renew_time(next_renew_time, sizeof(next_renew_time), lease);
-                    lease->spec->renew_time = next_renew_time;
-
-                    v1_lease_t* replaced_lease = CoordinationV1API_replaceNamespacedLease(
-                        db->k8s_api_client,
-                        client->lease_name,
-                        client->lease_namespace, 
-                        lease, 
-                        0x00, 0x00, 0x00, 0x00
-                    );
-                    // Replaced lease has client as identity, replacement was successful.
-                    if(db->k8s_api_client->response_code == 200 && strcmp(replaced_lease->spec->holder_identity, client->identity) == 0){
-                        client->role = ROLE_ACTIVE;
-                    }
-                    // Replacement was unsuccessful, assume request was unsuccessful due to race condition
-                    // and another client become active.
-                    else{
-                        client->role = ROLE_PASSIVE;
-                    }
-
-                    v1_lease_free(replaced_lease);
-                }
-                // Lease is owned by this identity, become active and renew if needed.
-                else if(lease->spec->holder_identity != 0x00 && strcmp(lease->spec->holder_identity, client->identity) == 0){
-                    client->role = ROLE_ACTIVE;
-                    
-                    // Lease is ready to be renewed.
-                    if(lease->spec->renew_time == 0x00 || seconds_until_lease_expiry(lease) <= SECONDS_BEFORE_EXPIRY_BEFORE_RENEWING){
-                        char next_renew_time[256];
-                        calculate_lease_next_renew_time(next_renew_time, sizeof(next_renew_time), lease);
-                        lease->spec->renew_time = next_renew_time;
-                        v1_lease_t* replaced_lease = CoordinationV1API_replaceNamespacedLease(
-                            db->k8s_api_client,
-                            client->lease_name,
-                            client->lease_namespace, 
-                            lease, 
-                            0x00, 0x00, 0x00, 0x00
-                        );
-                        if(replaced_lease == 0x00){
-                            printf("[Warning]: Failed to replace lease. Lease Name: %s. Namespace: %s.\n", client->lease_name, client->lease_namespace);
-                        }
-
-                        v1_lease_free(replaced_lease);
-                    }
-                    else{
-                        v1_lease_free(lease);
-                    }
-                }
-                // Lease is owned, become passive.
-                else{
-                    client->role = ROLE_PASSIVE;
-                }
-
-                // Role changed, update client.
-                if(client->role != role_before_changes){
-                    Set_Role_Message set_role_message;
-                    set_role_message.role = client->role;
-                    char buffer[256];
-                    int buffered = serialize_Set_Role_Message(buffer, sizeof(buffer), &set_role_message);
-                    write(client->connection.socket, &buffer, buffered);
-                }
+                // Attempt to update role, if appropriate.
+                attempt_to_update_role(db, client);
 
                 client_node = client_node->next;
             }
@@ -310,80 +327,3 @@ int main(int argc, char *argv[]){
 
     return 0;
 }
-
-
-                /*
-                if(lease == 0x00){
-                    printf("[Warning]: Failed to get lease. Lease Name: %s. Namespace: %s.\n", client->lease_name, client->lease_namespace);
-                }
-                else if(client->role == ROLE_UNKNOWN){
-                    // Owned by this, make active.
-                    if(lease->spec->holder_identity != 0x00 && strcmp(lease->spec->holder_identity, client->identity) == 0){
-                        client->role = ROLE_ACTIVE;
-                    }
-                    // Not owned by this, make passive.
-                    else{
-                        client->role = ROLE_PASSIVE;
-                    }
-
-                    v1_lease_free(lease);
-                }
-                else if(client->role == ROLE_PASSIVE){
-                    // Lease is owned by this, make active.
-                    if(lease->spec->holder_identity != 0x00 && strcmp(lease->spec->holder_identity, client->identity) == 0){
-                        client->role = ROLE_ACTIVE;
-
-                        v1_lease_free(lease);
-                    }
-                    // Lease has expired or has no owner, try to grab it.
-                    else if(lease->spec->holder_identity == 0x00 || lease->spec->renew_time == 0x00 || seconds_until_lease_expiry(lease) <= 0){
-                        lease->spec->holder_identity = client->identity;
-
-                        char next_renew_time[256];
-                        calculate_lease_next_renew_time(next_renew_time, sizeof(next_renew_time), lease);
-                        lease->spec->renew_time = next_renew_time;
-
-                        v1_lease_t* replaced_lease = CoordinationV1API_replaceNamespacedLease(
-                            db->k8s_api_client,
-                            client->lease_name,
-                            client->lease_namespace, 
-                            lease, 
-                            0x00, 0x00, 0x00, 0x00
-                        );
-                        if(replaced_lease == 0x00){
-                            printf("[Warning]: Failed to replace lease. Lease Name: %s. Namespace: %s.\n", client->lease_name, client->lease_namespace);
-                        }
-                        // Replaced lease has client as identity, replacement was successful.
-                        else if(db->k8s_api_client->response_code == 200 && strcmp(replaced_lease->spec->holder_identity, client->identity) == 0){
-                            client->role = ROLE_ACTIVE;
-                        }
-
-                        v1_lease_free(replaced_lease);
-                    }                    
-                }
-                else if(client->role == ROLE_ACTIVE){
-                    // Lease is not owned by this client, become passive.
-                    if(strcmp(lease->spec->holder_identity, client->identity) != 0){
-                        client->role = ROLE_PASSIVE;
-
-                        v1_lease_free(lease);
-                    }
-                    else if(lease->spec->renew_time == 0x00 || seconds_until_lease_expiry(lease) <= SECONDS_BEFORE_EXPIRY_BEFORE_RENEWING){
-                        char next_renew_time[256];
-                        calculate_lease_next_renew_time(next_renew_time, sizeof(next_renew_time), lease);
-                        lease->spec->renew_time = next_renew_time;
-                        v1_lease_t* replaced_lease = CoordinationV1API_replaceNamespacedLease(
-                            db->k8s_api_client,
-                            client->lease_name,
-                            client->lease_namespace, 
-                            lease, 
-                            0x00, 0x00, 0x00, 0x00
-                        );
-                        if(replaced_lease == 0x00){
-                            printf("[Warning]: Failed to replace lease. Lease Name: %s. Namespace: %s.\n", client->lease_name, client->lease_namespace);
-                        }
-
-                        v1_lease_free(replaced_lease);
-                    }
-                }
-                */
