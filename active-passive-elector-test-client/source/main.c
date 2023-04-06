@@ -10,8 +10,13 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <time.h>
-#include <unistd.h> // fcntl
-#include <fcntl.h> // fcntl
+#include <unistd.h>
+#include <fcntl.h>
+
+#include <c-net/TCP_Connection/TCP_Connection.h>
+#include <c-net/TCP_Connection/buffer_data_from_connection.h>
+#include <c-core/Process_Control/Process_Control.h>
+#include <c-core/Process_Control/init.h>
 
 #include "model/tcp-client.h"
 
@@ -21,10 +26,6 @@
 #include "../../active-passive-elector/source/messages/Set_Lease_Info_Message/serialize.h"
 #include "../../active-passive-elector/source/messages/Set_Role_Message/Set_Role_Message.h"
 #include "../../active-passive-elector/source/messages/Set_Role_Message/deserialize.h"
-#include "../../active-passive-elector/source/TCP_Connection/TCP_Connection.h"
-#include "../../active-passive-elector/source/TCP_Connection/buffer_data_from_connection.h"
-#include "../../active-passive-elector/source/Process_Control/Process_Control.h"
-#include "../../active-passive-elector/source/Process_Control/init.h"
 
 // Configuration.
 #define CLIENT_TIMEOUT_SECONDS 10

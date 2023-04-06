@@ -6,7 +6,8 @@
         "serialize.h": "c",
         "deserialize.h": "c",
         "cerrno": "c",
-        "system_error": "c"
+        "system_error": "c",
+        "message_types.h": "c"
     },
     "cmake.configureOnOpen": false
 }
