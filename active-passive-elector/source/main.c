@@ -1,33 +1,33 @@
-// C STD
-#include <errno.h> // errno
-#include <stdio.h> // printf
+#include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h> // memcpy
+#include <string.h>
 #include <sys/types.h>
-#include <time.h> // time
-
-// Linux
+#include <time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-// K8s
-#include <apiClient.h> // apiClient
-#include <CoordinationV1API.h> // v1_lease_t
+#include <kubernetes/include/apiClient.h>
+#include <kubernetes/api/CoordinationV1API.h>
 
-// Universe Builders
-#include "Process_Control/Process_Control.h"
-#include "Process_Control/init.h"
-#include "TCP_Server/TCP_Server.h"
-#include "TCP_Server/init.h"
-#include "TCP_Server/accept_client.h"
-#include "Linked_List/Linked_List_Node.h"
-#include "Doubly_Linked_List/Doubly_Linked_List_Node.h"
-#include "Doubly_Linked_List/init.h"
-#include "Doubly_Linked_List/remove.h"
-#include "TCP_Connection/TCP_Connection.h"
-#include "TCP_Connection/buffer_data_from_connection.h"
+#include <c-core/Process_Control/Process_Control.h>
+#include <c-core/Process_Control/init.h>
+#include <c-net/TCP_Server/TCP_Server.h>
+#include <c-net/TCP_Server/init.h>
+#include <c-net/TCP_Server/accept_client.h>
+#include <c-net/TCP_Connection/TCP_Connection.h>
+#include <c-net/TCP_Connection/buffer_data_from_connection.h>
+#include <c-ds/Linked_List/Linked_List_Node.h>
+#include <c-ds/Doubly_Linked_List/Doubly_Linked_List_Node.h>
+#include <c-ds/Doubly_Linked_List/init.h>
+#include <c-ds/Doubly_Linked_List/remove.h>
+#include <c-k8s/api_client/initialize_k8s_core_api_client.h>
+#include <c-k8s/lease/get_lease.h>
+#include <c-k8s/lease/seconds_until_lease_expiry.h>
+#include <c-k8s/lease/calculate_lease_next_renew_time.h>
+
 #include "Role/Role.h"
 #include "messages/Message_Header.h"
 #include "messages/message_types.h"
@@ -35,10 +35,6 @@
 #include "messages/Set_Lease_Info_Message/deserialize.h"
 #include "messages/Set_Role_Message/Set_Role_Message.h"
 #include "messages/Set_Role_Message/serialize.h"
-#include "K8s/initialize_k8s_core_api_client.h"
-#include "K8s/get_lease.h"
-#include "K8s/seconds_until_lease_expiry.h"
-#include "K8s/calculate_lease_next_renew_time.h"
 
 // Configuration.
 #define CLIENT_TIMEOUT_SECONDS 10
