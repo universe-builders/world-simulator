@@ -28,135 +28,15 @@
 #include <c-k8s/lease/seconds_until_lease_expiry.h>
 #include <c-k8s/lease/calculate_lease_next_renew_time.h>
 
-#include "Role/Role.h"
-#include "messages/Message_Header.h"
-#include "messages/message_types.h"
-#include "messages/Set_Lease_Info_Message/Set_Lease_Info_Message.h"
-#include "messages/Set_Lease_Info_Message/deserialize.h"
+#include "Program_Database/Program_Database.h"
+#include "Program_Database/init.h"
+#include "Client/Client.h"
+#include "Client/init_next_client.h"
+#include "Client/process_messages_for_client.h"
+#include "Role.h"
+#include "configuration.h"
 #include "messages/Set_Role_Message/Set_Role_Message.h"
 #include "messages/Set_Role_Message/serialize.h"
-
-// Configuration.
-#define CLIENT_TIMEOUT_SECONDS 10
-#define SECONDS_BEFORE_EXPIRY_BEFORE_RENEWING 2
-#define MAX_IDENTITY_STRING_LEN 255
-#define MAX_LEASE_NAME_STRING_LEN 255
-#define MAX_LEASE_NAMESPACE_STRING_LEN 255
-
-typedef struct Client{
-    TCP_Connection connection;
-    int            role;
-    time_t         last_heartbeat_time;
-    char           identity[MAX_IDENTITY_STRING_LEN + 1];
-    char           lease_name[MAX_LEASE_NAME_STRING_LEN + 1];
-    char           lease_namespace[MAX_LEASE_NAMESPACE_STRING_LEN + 1];
-} Client;
-
-typedef struct Program_Database{
-    TCP_Server               server;
-    Doubly_Linked_List_Node* clients;
-    int                      number_of_clients;
-    Client*                  next_client;
-    apiClient_t*             k8s_api_client;
-} Program_Database;
-
-void init_next_client(Program_Database* db){
-    db->next_client = malloc(sizeof(Client));
-    db->next_client->role = ROLE_UNKNOWN;
-    db->next_client->identity[0] = 0;
-    db->next_client->lease_name[0] = 0;
-    db->next_client->lease_namespace[0] = 0;
-}
-
-int init(Program_Database* db){
-    if(init_tcp_server(&db->server, 5001) == -1){
-        printf("Failed to init TCP server.\n");
-        return -1;
-    }
-
-    db->clients           = 0x00;
-    db->number_of_clients = 0;
-
-    init_next_client(db);
-
-    db->k8s_api_client = initialize_k8s_core_api_client();
-    if(db->k8s_api_client == 0x00){
-        printf("Failed to initialize K8s API Client\n");
-        return -1;
-    }
-
-    return 0;
-}
-
-/**
- * @return -1 for error, otherwise 0.
-*/
-int process_messages_for_client(Client* client){
-    int bytes_processed = 0;
-    while(bytes_processed < client->connection.recv_buffered){
-        char* buffer = client->connection.recv_buffer + bytes_processed;
-        Message_Header* message_header = (Message_Header*)buffer;
-        if(message_header->message_length > client->connection.recv_buffered) break;
-    
-        if(message_header->message_type == SET_LEASE_INFO_MSG_ID){
-            Set_Lease_Info_Message message;
-            deserialize_Set_Lease_Info_Message(buffer, &message);
-
-            // Validate data.
-            const int identity_str_len = strlen(message.identity);
-            if(identity_str_len > MAX_IDENTITY_STRING_LEN){
-                printf("[Warning]: Client identity exceeded maximum length of %i. Identity: %s.", MAX_IDENTITY_STRING_LEN, message.identity);
-                return -1;
-            }
-            const int lease_name_str_len = strlen(message.lease_name);
-            if(lease_name_str_len > MAX_LEASE_NAME_STRING_LEN){
-                printf("[Warning]: Client lease name exceeded maximum length of %i. Identity: %s.", MAX_LEASE_NAME_STRING_LEN, message.lease_name);
-                return -1;
-            }
-            const int lease_namespace_str_len = strlen(message.lease_namespace);
-            if(lease_namespace_str_len > MAX_LEASE_NAMESPACE_STRING_LEN){
-                printf("[Warning]: Client lease namespace exceeded maximum length of %i. Identity: %s.", MAX_LEASE_NAMESPACE_STRING_LEN, message.lease_namespace);
-                return -1;
-            }
-
-            // Store data in client.
-            memcpy(client->identity, message.identity, identity_str_len + 1);
-            memcpy(client->lease_name, message.lease_name, lease_name_str_len + 1);
-            memcpy(client->lease_namespace, message.lease_namespace, lease_namespace_str_len + 1);
-
-            printf("%s %s %s\n", client->identity, client->lease_name, client->lease_namespace);
-            printf("Processed SET_LEASE_INFO_MSG_ID\n");
-        }
-        else if(message_header->message_type == HEARTBEAT_MSG_ID){
-            client->last_heartbeat_time = time(0x00);
-
-            // Return heartbeat.
-            Message_Header heartbeat;
-            heartbeat.message_length = sizeof(heartbeat);
-            heartbeat.message_type   = HEARTBEAT_MSG_ID;
-            if(write(client->connection.socket, (void*)(&heartbeat), sizeof(heartbeat)) == -1){
-                printf("Write failed. errno: %i\n", errno);
-                return -1;
-            }
-        }
-        else{
-            printf("[Warning]: Client sent a message with an unhandled message type. Type: %i\n", message_header->message_type);
-            return -1;
-        }
-
-        bytes_processed += message_header->message_length;
-    }
-
-    if(bytes_processed == client->connection.recv_buffered){
-        client->connection.recv_buffered = 0;
-    } else{
-        int bytes_unprocessed = client->connection.recv_buffered - bytes_processed;
-        memcpy(client->connection.recv_buffer, client->connection.recv_buffer + bytes_processed, bytes_unprocessed);
-        client->connection.recv_buffered = bytes_unprocessed;
-    }
-
-    return 0;
-}
 
 void attempt_to_update_role(Program_Database* db, Client* client){
     // Attempt to change role, if appropriate.
@@ -238,7 +118,7 @@ int main(int argc, char *argv[]){
     init_process_control();
 
     Program_Database* db = (Program_Database*)( malloc(sizeof(Program_Database)) );
-    if(init(db) != 0){
+    if(init_Program_Database(db) != 0){
         printf("Failed to init program.\n");
         exit(1);
     }
@@ -260,6 +140,7 @@ int main(int argc, char *argv[]){
             init_next_client(db);
         }
 
+        // Enumerate over all clients.
         if(db->number_of_clients > 0){
             Doubly_Linked_List_Node* client_node = db->clients;
             while(client_node != 0x00){
@@ -283,11 +164,14 @@ int main(int argc, char *argv[]){
                 free(client); \
                 free(client_node_to_dc);
 
+                // Receive data from client.
                 if(buffer_data_from_connection(&client->connection) == -1){
                     printf("[Info] Disconnecting client due to error in buffering data from conn.\n");
                     disconnect_client();
                     continue;
                 }
+
+                // Process any messages ready for processing.
                 if(process_messages_for_client(client) == -1){
                     printf("[Info] Disconnecting client due to error in processing messages from conn.\n");
                     disconnect_client();
@@ -301,14 +185,10 @@ int main(int argc, char *argv[]){
                     continue;
                 }
 
-                // Skip trying to change role if no identity or lease provided by client yet.
-                if(client->identity[0] == 0 || client->lease_name[0] == 0 || client->lease_namespace[0] == 0){
-                    client_node = client_node->next;
-                    continue;
+                // Attempt to update role, if appropriate, when information has been provided.
+                if(client->identity[0] != 0 && client->lease_name[0] != 0 && client->lease_namespace[0] != 0){
+                    attempt_to_update_role(db, client);
                 }
-
-                // Attempt to update role, if appropriate.
-                attempt_to_update_role(db, client);
 
                 client_node = client_node->next;
             }

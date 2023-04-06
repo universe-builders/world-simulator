@@ -19,7 +19,10 @@
         "apiclient.h": "c",
         "serialize.h": "c",
         "get_lease.h": "c",
-        "calculate_lease_next_renew_time.h": "c"
+        "calculate_lease_next_renew_time.h": "c",
+        "configuration.h": "c",
+        "program_database.h": "c",
+        "message_types.h": "c"
     },
     "cmake.configureOnOpen": false
 }
