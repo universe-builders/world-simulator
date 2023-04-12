@@ -12,7 +12,6 @@ zone-manager, specifically only 1 pod which is in active-mode.
 ## Kubernetes Strategy
 1. 2 pod instances are created using a deployment
 2. active and passive are decided by attempting to grab lock 
-    * Uses configmap for lock
 3. passive connects to active and continously syncs state for fault tolerance
 4. simulator discovers active and connects, providing a unique-ID to it
     * the active will not directly provide the responsibility to the simulator, instead that is handled by the service: view-component-set-simulators-area-of-responsibility

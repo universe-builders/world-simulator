@@ -1,0 +1,28 @@
+{
+    "files.associations": {
+        "buffer_data_from_clients.h": "c",
+        "linked_list_node.h": "c",
+        "buffer_data_from_connection.h": "c",
+        "init.h": "c",
+        "tcp_server.h": "c",
+        "tcp_connection.h": "c",
+        "doubly_linked_list_node.h": "c",
+        "accept_client.h": "c",
+        "process_control.h": "c",
+        "incluster_config.h": "c",
+        "types.h": "c",
+        "socket.h": "c",
+        "coordinationv1api.h": "c",
+        "seconds_until_lease_expiry.h": "c",
+        "time.h": "c",
+        "string.h": "c",
+        "apiclient.h": "c",
+        "serialize.h": "c",
+        "get_lease.h": "c",
+        "calculate_lease_next_renew_time.h": "c",
+        "configuration.h": "c",
+        "program_database.h": "c",
+        "message_types.h": "c"
+    },
+    "cmake.configureOnOpen": false
+}
