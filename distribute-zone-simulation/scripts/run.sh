@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./built/active-passive-elector
+./built/distribute-zone-simulation

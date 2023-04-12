@@ -5,9 +5,9 @@
             "name": "debug: clang",
             "type": "lldb",
             "request": "launch",
-            "program": "/root/active-passive-elector/built/active-passive-elector",
+            "program": "/root/distribute-zone-simulation/built/distribute-zone-simulation",
             "args": [],
-            "cwd": "/root/active-passive-elector",
+            "cwd": "/root/distribute-zone-simulation",
             "preLaunchTask": "build: cmake"
             //"stopAtEntry": true,
         }

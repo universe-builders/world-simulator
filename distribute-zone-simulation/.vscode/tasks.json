@@ -3,10 +3,7 @@
         {
             "type": "shell",
             "label": "build: cmake",
-            "command": "/root/active-passive-elector/scripts/build.sh",
-            "options": {
-                "cwd": "/root/active-passive-elector"
-            },
+            "command": "/root/distribute-zone-simulation/scripts/build.sh",
             "group": {
                 "kind": "build",
                 "isDefault": true

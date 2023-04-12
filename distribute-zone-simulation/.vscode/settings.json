@@ -22,7 +22,8 @@
         "calculate_lease_next_renew_time.h": "c",
         "configuration.h": "c",
         "program_database.h": "c",
-        "message_types.h": "c"
+        "message_types.h": "c",
+        "errno.h": "c"
     },
     "cmake.configureOnOpen": false
 }

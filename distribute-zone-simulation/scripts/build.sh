@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cmake -S /root/active-passive-elector -B /root/active-passive-elector/built
-cd /root/active-passive-elector/built
+cmake -S /root/distribute-zone-simulation -B /root/distribute-zone-simulation/built
+cd /root/distribute-zone-simulation/built
 make VERBOSE=1
-cd /root/active-passive-elector
+cd /root/distribute-zone-simulation

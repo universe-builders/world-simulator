@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18.4)
-project(active-passive-elector C)
+project(distribute-zone-simulation C)
 
 # Source Files.
 file(GLOB_RECURSE SOURCE_FILES ${CMAKE_SOURCE_DIR}/source/*.c)
