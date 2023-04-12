@@ -23,7 +23,8 @@
         "configuration.h": "c",
         "program_database.h": "c",
         "message_types.h": "c",
-        "errno.h": "c"
+        "errno.h": "c",
+        "connect_to_server.h": "c"
     },
     "cmake.configureOnOpen": false
 }
